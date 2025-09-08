@@ -1,25 +1,19 @@
 @startuml Entity-Relationship-Diagram
-entity "Customer" as user {
-  * user_id : int <<PK>>
+entity "Customer" as customer {
+  * customer_id : int <<PK>>
   --
-  * username : varchar
-  * email : varchar
-  * password_hash : varchar
+  * name : varchar
 }
-entity "Product" as P {
-  *product_id : INT
-  --
-  name : VARCHAR
-  price : DECIMAL
-}
-entity "Order" as O {
+
+entity "PizzaOrder" as PO {
   * order_id : int <<PK>>
   --
-  * user_id : int <<FK>>
+  * customer_id : int <<FK>>
+  * customer_id : int 
   * order_date : datetime
   * total_amount : decimal
 }
-entity "Pizza" as PZ {
+entity "Pizza" as P {
   * pizza_id : INT <<PK>>
   --
   name : VARCHAR
@@ -36,7 +30,7 @@ entity "OrderItem" as OI {
   * order_item_id : int <<PK>>
   --
   * order_id : int <<FK>>
-  * product_id : int <<FK>>
+  * pizza_id : int <<FK>>
   * quantity : int
   * price : decimal
 }
@@ -44,17 +38,15 @@ entity "DeliveryPerson" as DP {
   * delivery_person_id : int <<PK>>
   --
   * name : varchar
-  * phone : varchar
 }
-entity "Discount" as DC {
+entity "DiscountCode" as DC {
   * discount_id : int <<PK>>
   --
-  * code : varchar
   * percentage : decimal
   * expiry_date : datetime
 }
-user ||--o{ O : places
-O }o--o{ P : contains
+customer ||--o{ PO : places
+PO }o--o{ P : contains
 
 @enduml
 
