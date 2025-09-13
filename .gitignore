@@ -17,6 +17,7 @@ develop-eggs/
 *.spec
 *.log
 *.tmp
+.env
 
 # Virtual environments
 .venv/
