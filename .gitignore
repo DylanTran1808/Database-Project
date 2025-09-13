@@ -1,0 +1,69 @@
+# -------------------------
+# Python
+# -------------------------
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+.eggs/
+dist/
+build/
+develop-eggs/
+.installed.cfg
+*.manifest
+*.spec
+*.log
+*.tmp
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+.conda/
+.venv*/
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# VSCode, PyCharm, and other IDE settings
+.vscode/
+.idea/
+*.iml
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+*.py,cover
+.cache/
+pytest_cache/
+.coverage*
+*.mo
+
+# -------------------------
+# Database
+# -------------------------
+# SQLite databases
+*.db
+*.db3
+*.sqlite
+*.sqlite3
+
+# Database dumps
+*.sql
+*.bak
+*.backup
+*.dump
+
+# -------------------------
+# OS / Misc
+# -------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

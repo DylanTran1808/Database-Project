@@ -3,50 +3,57 @@ entity "Customer" as customer {
   * customer_id : int <<PK>>
   --
   * name : varchar
+  * postcode : varchar <<PK>>
+  * birth_date : date
+  * address : varchar
 }
 
-entity "PizzaOrder" as PO {
+entity "Orders" as O {
   * order_id : int <<PK>>
   --
   * customer_id : int <<FK>>
-  * customer_id : int 
-  * order_date : datetime
+  * delivery_person_id : int <<FK>>
+  * list_of_items_id: int <<FK>>
   * total_amount : decimal
+  * total_price : decimal
 }
 entity "Pizza" as P {
   * pizza_id : INT <<PK>>
   --
   name : VARCHAR
-  size : VARCHAR
-  price : DECIMAL
 }
 entity "Ingredient" as I {
   * ingredient_id : INT <<PK>>
   --
   name : VARCHAR
-  quantity : VARCHAR
 }
 entity "OrderItem" as OI {
   * order_item_id : int <<PK>>
   --
-  * order_id : int <<FK>>
-  * pizza_id : int <<FK>>
+  * order_id : int <<FK>> 
+  * type : varchar
   * quantity : int
   * price : decimal
 }
 entity "DeliveryPerson" as DP {
   * delivery_person_id : int <<PK>>
   --
-  * name : varchar
+  * is_available : boolean
+  * gender : varchar
+  * age : int
 }
 entity "DiscountCode" as DC {
   * discount_id : int <<PK>>
   --
   * percentage : decimal
-  * expiry_date : datetime
+  * cost : decimal
+  * type : varchar
 }
-customer ||--o{ PO : places
-PO }o--o{ P : contains
-
+customer ||--o{ O : places
+O ||--o{ OI : contains
+DP ||--o{ O : delivers
+OI }o--|| P : "is a"
+P ||--o{ I : "contains"
+DC ||--|| O : "applies to"
 @enduml
 
