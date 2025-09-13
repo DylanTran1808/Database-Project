@@ -26,11 +26,50 @@
 
 -- Dump completed on 2025-09-04 13:47:25
 
-CREATE TABLE users (
-    user_id INT AUTO_INCREMENT,
-    username VARCHAR(50) NOT NULL,
-    email VARCHAR(100) UNIQUE,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (user_id)
-    
+USE pizza_ordering;
+
+CREATE TABLE IF NOT EXISTS customer (
+    customer_id INT PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS PzOrder (
+    order_id INT PRIMARY KEY,
+    customer_id INT,
+    order_date DATETIME,
+    total_amount DECIMAL(6,2),
+    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+);
+
+CREATE TABLE IF NOT EXISTS pizza (
+    pizza_id INT PRIMARY KEY,
+    name VARCHAR(255),
+    size VARCHAR(255),
+    price DECIMAL(5,2)
+);
+
+CREATE TABLE IF NOT EXISTS orderItem (
+    order_item_id INT PRIMARY KEY,
+    order_id INT,
+    pizza_id INT,
+    quantity INT,
+    price DECIMAL(5,2),
+    FOREIGN KEY (order_id) REFERENCES PzOrder(order_id),
+    FOREIGN KEY (pizza_id) REFERENCES pizza(pizza_id)
+);
+
+CREATE TABLE IF NOT EXISTS ingredient (
+    ingredient_id INT PRIMARY KEY,
+    name VARCHAR(255),
+    quantity VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS deliveryPerson (
+    delivery_person_id INT PRIMARY KEY,
+    name VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS discountCode (
+    discount_id INT PRIMARY KEY,
+    percentage DECIMAL(5,2)
 );
