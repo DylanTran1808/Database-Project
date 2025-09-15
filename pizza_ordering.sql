@@ -25,51 +25,114 @@
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
 -- Dump completed on 2025-09-04 13:47:25
+-- Drop tables if they exist (for clean setup)
+
+/* Only use the 2 below commands once*/
+-- DROP DATABASE IF EXISTS pizza_ordering;
+-- CREATE DATABASE pizza_ordering; 
 
 USE pizza_ordering;
 
-CREATE TABLE IF NOT EXISTS customer (
-    customer_id INT PRIMARY KEY,
-    name VARCHAR(255)
+
+-- ========================
+-- Customer Table
+-- ========================
+CREATE TABLE Customer (
+    customer_id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    postcode VARCHAR(20) NOT NULL,
+    birth_date DATE NOT NULL,
+    address VARCHAR(255),
+    PRIMARY KEY (customer_id)
 );
 
-CREATE TABLE IF NOT EXISTS PzOrder (
-    order_id INT PRIMARY KEY,
+-- ========================
+-- Delivery Person Table
+-- ========================
+CREATE TABLE DeliveryPerson (
+    delivery_person_id INT AUTO_INCREMENT,
+    is_available BOOLEAN NOT NULL DEFAULT TRUE,
+    gender VARCHAR(10),
+    age INT,
+    PRIMARY KEY (delivery_person_id)
+);
+
+-- ========================
+-- Pizza Table
+-- ========================
+CREATE TABLE Pizza (
+    pizza_id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (pizza_id)
+);
+
+-- ========================
+-- Ingredient Table
+-- ========================
+CREATE TABLE Ingredient (
+    ingredient_id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    PRIMARY KEY (ingredient_id)
+);
+
+-- ========================
+-- PizzaIngredient (junction for Pizza ↔ Ingredient)
+-- ========================
+CREATE TABLE PizzaIngredient (
+    pizza_id INT,
+    ingredient_id INT,
+    quantity DECIMAL(5,2) DEFAULT 1,
+    PRIMARY KEY (pizza_id, ingredient_id),
+    FOREIGN KEY (pizza_id) REFERENCES Pizza(pizza_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (ingredient_id) REFERENCES Ingredient(ingredient_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+-- ========================
+-- Discount Code Table
+-- ========================
+CREATE TABLE DiscountCode (
+    discount_id INT AUTO_INCREMENT,
+    percentage DECIMAL(5,2),
+    cost DECIMAL(10,2),
+    type VARCHAR(50),
+    PRIMARY KEY (discount_id)
+);
+
+-- ========================
+-- Orders Table
+-- ========================
+CREATE TABLE Orders (
+    order_id INT AUTO_INCREMENT,
     customer_id INT,
-    order_date DATETIME,
-    total_amount DECIMAL(6,2),
-    FOREIGN KEY (customer_id) REFERENCES customer(customer_id)
+    delivery_person_id INT,
+    discount_id INT,
+    total_amount DECIMAL(10,2),
+    total_price DECIMAL(10,2),
+    order_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (order_id),
+    FOREIGN KEY (customer_id) REFERENCES Customer(customer_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (delivery_person_id) REFERENCES DeliveryPerson(delivery_person_id)
+        ON DELETE SET NULL ON UPDATE CASCADE,
+    FOREIGN KEY (discount_id) REFERENCES DiscountCode(discount_id)
+        ON DELETE SET NULL ON UPDATE CASCADE
 );
 
-CREATE TABLE IF NOT EXISTS pizza (
-    pizza_id INT PRIMARY KEY,
-    name VARCHAR(255),
-    size VARCHAR(255),
-    price DECIMAL(5,2)
-);
-
-CREATE TABLE IF NOT EXISTS orderItem (
-    order_item_id INT PRIMARY KEY,
+-- ========================
+-- OrderItem Table
+-- ========================
+CREATE TABLE OrderItem (
+    order_item_id INT AUTO_INCREMENT,
     order_id INT,
     pizza_id INT,
-    quantity INT,
-    price DECIMAL(5,2),
-    FOREIGN KEY (order_id) REFERENCES PzOrder(order_id),
-    FOREIGN KEY (pizza_id) REFERENCES pizza(pizza_id)
-);
-
-CREATE TABLE IF NOT EXISTS ingredient (
-    ingredient_id INT PRIMARY KEY,
-    name VARCHAR(255),
-    quantity VARCHAR(255)
-);
-
-CREATE TABLE IF NOT EXISTS deliveryPerson (
-    delivery_person_id INT PRIMARY KEY,
-    name VARCHAR(255)
-);
-
-CREATE TABLE IF NOT EXISTS discountCode (
-    discount_id INT PRIMARY KEY,
-    percentage DECIMAL(5,2)
+    type VARCHAR(50),
+    quantity INT NOT NULL,
+    price DECIMAL(10,2),
+    PRIMARY KEY (order_item_id),
+    FOREIGN KEY (order_id) REFERENCES Orders(order_id)
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    FOREIGN KEY (pizza_id) REFERENCES Pizza(pizza_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
