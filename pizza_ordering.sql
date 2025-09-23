@@ -28,8 +28,8 @@
 -- Drop tables if they exist (for clean setup)
 
 /* Only use the 2 below commands once*/
--- DROP DATABASE IF EXISTS pizza_ordering;
--- CREATE DATABASE pizza_ordering; 
+DROP DATABASE IF EXISTS pizza_ordering;
+CREATE DATABASE pizza_ordering; 
 
 USE pizza_ordering;
 
