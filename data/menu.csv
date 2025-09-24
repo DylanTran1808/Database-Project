@@ -1,0 +1,26 @@
+Category,Name,Price,Ingredients
+Pizza,"Vegan Margherita",,"Tomato Sauce, Vegan Mozzarella, Basil"
+Pizza,"Garden Vegan",,"Tomato Sauce, Vegan Mozzarella, Mushrooms, Bell Peppers, Onions, Olives"
+Pizza,"Spicy Vegan",,"Tomato Sauce, Vegan Mozzarella, Jalapeños, Onions, Bell Peppers"
+Pizza,"Pesto Vegan",,"Pesto, Vegan Mozzarella, Cherry Tomatoes, Arugula"
+Pizza,"Margherita",,"Tomato Sauce, Mozzarella, Basil"
+Pizza,"Quattro Formaggi",,"White Sauce, Mozzarella, Gorgonzola, Parmesan"
+Pizza,"Funghi",,"Tomato Sauce, Mozzarella, Mushrooms"
+Pizza,"Verdure",,"Tomato Sauce, Mozzarella, Bell Peppers, Artichokes, Spinach"
+Pizza,"Greco",,"Pesto, Mozzarella, Olives, Cherry Tomatoes, Onions"
+Pizza,"Pepperoni",,"Tomato Sauce, Mozzarella, Pepperoni"
+Pizza,"Hawaiian",,"Tomato Sauce, Mozzarella, Ham, Pineapple"
+Pizza,"Prosciutto e Funghi",,"Tomato Sauce, Mozzarella, Prosciutto, Mushrooms"
+Pizza,"Carne",,"Tomato Sauce, Mozzarella, Pepperoni, Italian Sausage, Ham"
+Pizza,"Pollo Piccante",,"Tomato Sauce, Mozzarella, Chicken, Jalapeños, Onions"
+Pizza,"Capricciosa",,"Tomato Sauce, Mozzarella, Ham, Mushrooms, Artichokes, Olives"
+Drink,"Coca-Cola",2.50,
+Drink,"Sparkling Water",2.00,
+Drink,"Orange Juice",3.00,
+Drink,"Iced Tea",2.80,
+Drink,"Still Water",2.00,
+Dessert,"Tiramisu",6.50,
+Dessert,"Panna Cotta",6.00,
+Dessert,"Chocolate Lava Cake",7.00,
+Dessert,"Gelato (2 scoops)",4.50,
+Dessert,"Cheesecake",6.50,

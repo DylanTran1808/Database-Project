@@ -1,11 +1,40 @@
 @startuml Entity-Relationship-Diagram
-entity "Customer" as customer {
-  * customer_id : int <<PK>>
+
+' -- Entities based on the SQL schema --
+
+entity "Product" as product {
+  * product_id : int <<PK>>
   --
   * name : varchar
-  * postcode : varchar <<PK>>
-  * birth_date : date
-  * address : varchar
+  * type : boolean  -- 'pizza', 'not pizza'
+  * price : decimal
+}
+
+entity "Pizza" as P {
+  * product_id : INT <<PK, FK>>
+  --
+  size : VARCHAR
+}
+
+entity "Drink" as drink {
+  * product_id : INT <<PK, FK>>
+  --
+  * name : VARCHAR
+}
+
+entity "Dessert" as dessert {
+  * product_id : INT <<PK, FK>>
+  --
+  * name : VARCHAR
+}
+
+entity "OrderItem" as OI {
+  * order_item_id : int <<PK>>
+  --
+  * order_id : int <<FK>> 
+  * product_id : int <<FK>>
+  * quantity : int
+  * price : decimal
 }
 
 entity "Orders" as O {
@@ -13,28 +42,24 @@ entity "Orders" as O {
   --
   * customer_id : int <<FK>>
   * delivery_person_id : int <<FK>>
-  * list_of_items_id: int <<FK>>
-  * total_amount : decimal
+  * discount_id : int <<FK>>
   * total_price : decimal
+  * total_amount : int
+  * order_time : datetime
+
 }
-entity "Pizza" as P {
-  * pizza_id : INT <<PK>>
+
+' -- Other existing entities (assumed) --
+
+entity "Customer" as customer {
+  * customer_id : int <<PK>>
   --
-  name : VARCHAR
+  * name : varchar
+  * postcode : varchar
+  * birth_date : date
+  * address : varchar
 }
-entity "Ingredient" as I {
-  * ingredient_id : INT <<PK>>
-  --
-  name : VARCHAR
-}
-entity "OrderItem" as OI {
-  * order_item_id : int <<PK>>
-  --
-  * order_id : int <<FK>> 
-  * type : varchar
-  * quantity : int
-  * price : decimal
-}
+
 entity "DeliveryPerson" as DP {
   * delivery_person_id : int <<PK>>
   --
@@ -42,6 +67,7 @@ entity "DeliveryPerson" as DP {
   * gender : varchar
   * age : int
 }
+
 entity "DiscountCode" as DC {
   * discount_id : int <<PK>>
   --
@@ -49,11 +75,30 @@ entity "DiscountCode" as DC {
   * cost : decimal
   * type : varchar
 }
-customer ||--o{ O : places
-O ||--o{ OI : contains
-DP ||--o{ O : delivers
-OI }o--|| P : "is a"
-P ||--o{ I : "contains"
-DC ||--|| O : "applies to"
-@enduml
 
+entity "Ingredient" as I {
+  * ingredient_id : INT <<PK>>
+  --
+  * name : VARCHAR
+  * type : VARCHAR -- e.g 'vegan', 'vegetarian', 'non-vegetarian'
+}
+
+
+' -- Relationships --
+
+' Inheritance: Pizza, Drink, and Dessert are types of Product
+product <|-- P
+product <|-- drink
+product <|-- dessert
+
+' Core order relationships
+customer ||--o{ O : places
+O      ||--o{ OI : contains
+OI     }o--|| product : includes
+DP     ||--o{ O : delivers
+
+' Other relationships (assumed)
+product ||--o{ I : "only valid if pizza"
+DC ||--|| O : "applies to"
+
+@enduml

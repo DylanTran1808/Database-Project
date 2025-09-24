@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import mysql.connector
 from dotenv import load_dotenv
 import os
+from datetime import date
 load_dotenv()
 db_user = os.getenv("password")
 app = Flask(__name__)
@@ -13,25 +14,55 @@ conn = mysql.connector.connect(
 )
 db = conn.cursor()
 
+# --- DB helper ---
+def query(sql, params=None, one=False, commit=False):
+    cur = conn.cursor(buffered=True, dictionary=False)
+    cur.execute(sql, params or ())
+    result = None
+    if commit:
+        conn.commit()
+        result = cur.lastrowid  # return inserted id if needed
+    else:
+        result = cur.fetchone() if one else cur.fetchall()
+    cur.close()
+    return result
+
+# @app.route("/menu", methods=["GET"])
+# def menu():
+#     pizzas = db.execute("""
+#         SELECT 
+#             p.name,
+#             SUM(pi.price * pi.quantity) AS total_price
+#         FROM Pizza p
+#         JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
+#         GROUP BY p.name
+#     """)
+#     drinks = db.execute("SELECT dr.name, price FROM Drink dr") # add drinks and desserts table
+#     desserts = db.execute("SELECT de.name, price FROM Dessert de")
+#     return jsonify(
+#         { "pizzas": [ {"name": n, "price": float(p), "label": ("vegan" if v else ("vegetarian" if veg else "non-vegetarian"))} for n, p, v, veg in pizzas], 
+#                     "drinks": [{"name": n, "price": float(p)} for n, p in drinks], 
+#                     "desserts": [{"name": n, "price": float(p)} for n, p in desserts] } )
+
 @app.route("/menu", methods=["GET"])
 def menu():
-    pizzas = db.execute("""
+    pizzas = query("""
         SELECT 
             p.name,
-            SUM(i.base_price * pi.quantity) AS total_price,
-            MIN(i.is_vegan) AS all_vegan,
-            MIN(i.is_vegetarian) AS all_vegetarian
+            SUM(pi.price * pi.quantity) AS total_price
         FROM Pizza p
-        JOIN PizzaIngredient pi ON p.pizza_id = pi.pizza_id
-        JOIN Ingredient i ON pi.ingredient_id = i.ingredient_id
+        JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
         GROUP BY p.name
     """)
-    drinks = db.execute("SELECT dr.name, price FROM Drink dr") # add drinks and desserts table
-    desserts = db.execute("SELECT de.name, price FROM Dessert de")
-    return jsonify(
-        { "pizzas": [ {"name": n, "price": float(p), "label": ("vegan" if v else ("vegetarian" if veg else "non-vegetarian"))} for n, p, v, veg in pizzas], 
-                    "drinks": [{"name": n, "price": float(p)} for n, p in drinks], 
-                    "desserts": [{"name": n, "price": float(p)} for n, p in desserts] } )
+
+    drinks = query("SELECT name, price FROM Drink")
+    desserts = query("SELECT name, price FROM Dessert")
+
+    return jsonify({
+        "pizzas": [{"name": n, "price": float(p)} for (n, p) in pizzas],
+        "drinks": [{"name": n, "price": float(p)} for (n, p) in drinks],
+        "desserts": [{"name": n, "price": float(p)} for (n, p) in desserts]
+    })
                     
 @app.route("/order", methods=["POST"])
 def order():
@@ -47,10 +78,9 @@ def order():
 
         if item["type"] == "pizza":
             row = db.db.execute("""
-                SELECT SUM(i.base_price * pi.quantity) AS price
+                SELECT SUM(pi.price * pi.quantity) AS price
                 FROM Pizza p
-                JOIN PizzaIngredient pi ON p.pizza_id = pi.pizza_id
-                JOIN Ingredient i ON pi.ingredient_id = i.ingredient_id
+                JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
                 WHERE p.pizza_id = %s
                 GROUP BY p.pizza_id
             """, (item["id"],), one=True)

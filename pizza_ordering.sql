@@ -34,6 +34,7 @@ CREATE DATABASE pizza_ordering;
 USE pizza_ordering;
 
 
+
 -- ========================
 -- Customer Table
 -- ========================
@@ -57,13 +58,35 @@ CREATE TABLE DeliveryPerson (
     PRIMARY KEY (delivery_person_id)
 );
 
+CREATE TABLE Product (
+	product_id INT AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    is_pizza BOOL NOT NULL DEFAULT FALSE,
+    price DECIMAL(10,2) NOT NULL,
+    PRIMARY KEY (product_id)
+);
 -- ========================
 -- Pizza Table
 -- ========================
 CREATE TABLE Pizza (
-    pizza_id INT AUTO_INCREMENT,
-    name VARCHAR(100) NOT NULL,
-    PRIMARY KEY (pizza_id)
+    product_id INT,
+    PRIMARY KEY (product_id),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Drink (
+	product_id INT,
+    PRIMARY KEY (product_id),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
+);
+
+CREATE TABLE Dessert (
+    product_id INT,
+    PRIMARY KEY (product_id),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id)
+        ON DELETE CASCADE ON UPDATE CASCADE
 );
 
 -- ========================
@@ -71,23 +94,16 @@ CREATE TABLE Pizza (
 -- ========================
 CREATE TABLE Ingredient (
     ingredient_id INT AUTO_INCREMENT,
+    product_id INT,
     name VARCHAR(100) NOT NULL,
-    PRIMARY KEY (ingredient_id)
-);
-
--- ========================
--- PizzaIngredient (junction for Pizza ↔ Ingredient)
--- ========================
-CREATE TABLE PizzaIngredient (
-    pizza_id INT,
-    ingredient_id INT,
-    quantity DECIMAL(5,2) DEFAULT 1,
-    PRIMARY KEY (pizza_id, ingredient_id),
-    FOREIGN KEY (pizza_id) REFERENCES Pizza(pizza_id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (ingredient_id) REFERENCES Ingredient(ingredient_id)
+    type VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    quantity INT NOT NULL,
+    PRIMARY KEY (ingredient_id),
+    FOREIGN KEY (product_id) REFERENCES Product(product_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
+
 
 -- ========================
 -- Discount Code Table
@@ -125,14 +141,13 @@ CREATE TABLE Orders (
 -- ========================
 CREATE TABLE OrderItem (
     order_item_id INT AUTO_INCREMENT,
-    order_id INT,
-    pizza_id INT,
-    type VARCHAR(50),
+    order_id INT NOT NULL,
+    product_id INT NOT NULL,
     quantity INT NOT NULL,
-    price DECIMAL(10,2),
+    price DECIMAL(10,2) NOT NULL,
     PRIMARY KEY (order_item_id),
     FOREIGN KEY (order_id) REFERENCES Orders(order_id)
         ON DELETE CASCADE ON UPDATE CASCADE,
-    FOREIGN KEY (pizza_id) REFERENCES Pizza(pizza_id)
+    FOREIGN KEY (product_id) REFERENCES Product(product_id)
         ON DELETE CASCADE ON UPDATE CASCADE
 );
