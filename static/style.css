@@ -1,0 +1,87 @@
+body {
+  font-family: 'Segoe UI', Tahoma, sans-serif;
+  background: #f7f7f7;
+  margin: 0;
+  padding: 0;
+  color: #333;
+}
+
+header {
+  text-align: center;
+  padding: 20px;
+  background: #ff4b2b;
+  color: white;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+main {
+  display: flex;
+  justify-content: space-between;
+  padding: 20px;
+  gap: 30px;
+}
+
+.menu-grid {
+  flex: 3;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+.menu-card {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.menu-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.menu-card h3 {
+  margin: 0 0 10px;
+  color: #222;
+}
+
+.menu-card p {
+  font-weight: bold;
+  color: #ff4b2b;
+}
+
+.basket {
+  flex: 1;
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.basket ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+.basket li {
+  padding: 6px 0;
+  border-bottom: 1px solid #eee;
+}
+
+#checkout-btn {
+  background: #ff4b2b;
+  color: white;
+  border: none;
+  width: 100%;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+#checkout-btn:hover {
+  background: #ff2b00;
+}

@@ -28,9 +28,9 @@ def query(sql, params=None, one=False, commit=False):
     cur.close()
     return result
 
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template("menu.html")
+    return render_template('menu.html')
 
 @app.route("/menu", methods=["GET"])
 def menu():
@@ -58,32 +58,33 @@ def order():
     data = request.json
     customer_id = data["customer_id"]
     items = data["items"]
-
+    amount =0
     total = 0
     discount = 0
     order_items = []
 
     for item in items: 
         quantity = item.get("quantity", 1)
-
+       
         if item["type"] == "pizza": #UPDATD COLUMN
             row = query("""
                 SELECT SUM(pi.price * pi.quantity) AS price
-                FROM Pizza p
-                JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
-                WHERE p.pizza_id = %s
-                GROUP BY p.pizza_id
+                FROM Ingredient AS pi
+                JOIN Pizza AS p ON p.product_id = pi.product_id
+                JOIN Product AS pr ON p.product_id = pr.product_id
+                WHERE pr.product_id = %s
+                GROUP BY pr.product_id
             """, (item["id"],), one=True)
             price = row[0] * quantity
-            name = query("SELECT name FROM Pizza WHERE pizza_id=%s", (item["id"],), one=True)[0]
+            name = query("SELECT pr.name FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
 
         elif item["type"] == "drink":
-            row = query("SELECT name, price FROM Drink WHERE drink_id=%s", (item["id"],), one=True)
+            row = query("SELECT pr.name, pr.price FROM Product AS pr JOIN Drink AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
             name, price = row
             price *= quantity
 
         elif item["type"] == "dessert":
-            row = query("SELECT name, price FROM Dessert WHERE dessert_id=%s", (item["id"],), one=True)
+            row = query("SELECT pr.name, pr.price FROM Product AS pr JOIN Dessert AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
             name, price = row
             price *= quantity
 
@@ -91,6 +92,7 @@ def order():
             continue 
 
         total += price
+        amount += quantity
         order_items.append((item["type"], name, quantity, price))
 
 
@@ -116,9 +118,10 @@ def order():
 
     total_pizzas = query("""
     SELECT SUM(quantity)
-    FROM OrderItem oi
-    JOIN Orders o ON oi.order_id = o.order_id
-    WHERE o.customer_id=%s AND oi.type='pizza';
+    FROM OrderItem AS oi
+    JOIN Orders AS o ON oi.order_id = o.order_id
+    JOIN Product AS pr ON oi.product_id = pr.product_id
+    WHERE o.customer_id=%s AND pr.is_pizza = 1;
 """, (customer_id,), one=True)[0] or 0
     
     if total_pizzas >= 10:
@@ -135,10 +138,13 @@ def order():
         commit=True
     )
 
-    for pizza_id, quantity, price in order_items:
+    for type, name, quantity, price in order_items:
         query(
-            "INSERT INTO OrderItem (order_id, pizza_id, type, quantity, price) VALUES (%s, %s, %s, %s, %s)",
-            (order_id, pizza_id, "pizza", quantity, price),
+            f"INSERT INTO Orders (customer_id, delivery_person_id,discount_id, total_amount, total_price) VALUES ({data["customer_id"]},{data["delivery_person_id"]},{amount}, )"
+        )
+        query(
+            "INSERT INTO OrderItem (product_id, quantity, price) VALUES (%s, %s, %s, %s)",
+            (order_id, product_id, "pizza", quantity, price),
             commit=True
         )
 

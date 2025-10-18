@@ -1,55 +1,77 @@
-console.log("✅ Script loaded");
+document.addEventListener("DOMContentLoaded", async () => {
+  const menuContainer = document.getElementById("menu-container");
+  const basketList = document.getElementById("basket");
+  const checkoutBtn = document.getElementById("checkout-btn");
+  const totalText = document.getElementById("total");
 
-async function loadMenu() {
-  try {
-    console.log("Fetching /menu...");
-    const res = await fetch('/menu');
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    const data = await res.json();
-    console.log("Menu data:", data);
+  let basket = [];
 
-    const menuDiv = document.getElementById('menu');
-    menuDiv.innerHTML = '<h2>Menu Loaded!</h2>';
+  // Load menu
+  const res = await fetch("/menu");
+  const data = await res.json();
+  console.log("Menu Loaded!");
 
-    const sections = ['pizzas', 'drinks', 'desserts'];
-    sections.forEach(section => {
-      const title = document.createElement('h2');
-      title.textContent = section;
-      menuDiv.appendChild(title);
+  const allItems = [
+    ...data.pizzas.map(p => ({ ...p, type: "pizza" })),
+    ...data.drinks.map(p => ({ ...p, type: "drink" })),
+    ...data.desserts.map(p => ({ ...p, type: "dessert" }))
+  ];
 
-      data[section].forEach(item => {
-        const div = document.createElement('div');
-        div.textContent = `${item.name} - $${item.price.toFixed(2)}`;
-        div.onclick = () => addToBasket(item);
-        menuDiv.appendChild(div);
-      });
-    });
-  } catch (err) {
-    console.error("❌ Error loading menu:", err);
-  }
-}
-
-const basket = [];
-
-function addToBasket(item) {
-  basket.push(item);
-  console.log("Basket:", basket);
-  renderBasket();
-}
-
-function renderBasket() {
-  const ul = document.getElementById('basket-items');
-  const total = document.getElementById('total');
-  ul.innerHTML = '';
-  let sum = 0;
-  basket.forEach(item => {
-    const li = document.createElement('li');
-    li.textContent = `${item.name} - $${item.price.toFixed(2)}`;
-    ul.appendChild(li);
-    sum += item.price;
+  allItems.forEach(item => {
+    const card = document.createElement("div");
+    card.className = "menu-card";
+    card.innerHTML = `
+      <h3>${item.name}</h3>
+      <p>$${item.price.toFixed(2)}</p>
+      <small>${item.type.toUpperCase()}</small>
+    `;
+    card.addEventListener("click", () => addToBasket(item));
+    menuContainer.appendChild(card);
   });
-  total.textContent = `Total: $${sum.toFixed(2)}`;
-}
 
-window.onload = loadMenu;
+  function addToBasket(item) {
+    basket.push(item);
+    renderBasket();
+  }
+
+  function renderBasket() {
+    basketList.innerHTML = "";
+    let total = 0;
+    basket.forEach(it => {
+      const li = document.createElement("li");
+      li.textContent = `${it.name} - $${it.price.toFixed(2)}`;
+      basketList.appendChild(li);
+      total += it.price;
+    });
+    totalText.textContent = `Total: $${total.toFixed(2)}`;
+  }
+
+  checkoutBtn.addEventListener("click", async () => {
+    if (basket.length === 0) return alert("Your basket is empty!");
+
+    // Example customer id (you’ll replace this dynamically)
+    const customer_id = 1;
+
+    const payload = {
+      customer_id,
+      items: basket.map(it => ({
+        type: it.type,
+        id: it.product_id || 1, // you can fix this once you know product_id
+        quantity: 1
+      }))
+    };
+
+    const response = await fetch("/order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+
+    const result = await response.json();
+    alert(`✅ Order placed! Total: $${result.total.toFixed(2)} (Discount: $${result.discount.toFixed(2)})`);
+    basket = [];
+    renderBasket();
+  });
+});
+
 

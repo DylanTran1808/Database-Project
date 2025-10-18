@@ -1,19 +1,30 @@
 <!DOCTYPE html>
-
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pizza Menu</title>
-  <script src="{{ url_for('static', filename='script.js') }}" defer></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Pizza Ordering</title>
+  <link rel="stylesheet" href="/static/style.css" />
 </head>
 <body>
-  <h1>Pizza Menu</h1>
-  <div id="menu"></div>
+  <header>
+    <h1>🍕 Pizza Ordering</h1>
+    <p>Select your favorite pizzas, drinks, and desserts below!</p>
+  </header>
 
-  <h2>Basket</h2>
-  <ul id="basket-items"></ul>
-  <p id="total">Total: $0</p>
+  <main>
+    <div id="menu-container" class="menu-grid"></div>
+
+    <aside class="basket">
+      <h2>🛒 Your Basket</h2>
+      <ul id="basket"></ul>
+      <p id="total">Total: $0.00</p>
+      <button id="checkout-btn">Place Order</button>
+    </aside>
+  </main>
+
+  <script src="/static/script.js"></script>
 </body>
 </html>
+
 
