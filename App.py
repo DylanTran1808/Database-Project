@@ -53,11 +53,11 @@ def menu():
         "desserts": [{"name": n, "price": float(p)} for (n, p) in desserts]
     })
                     
-@app.route("/order", methods=["POST"])
-def order():
-    data = request.json
-    customer_id = data["customer_id"]
-    items = data["items"]
+#@app.route("/order", methods=["POST"])
+def calculate_order(customer_id, items):
+    #data = request.json
+    #customer_id = data["customer_id"]
+    #items = data["items"]
     amount =0
     total = 0
     discount = 0
@@ -72,31 +72,42 @@ def order():
                 FROM Ingredient AS pi
                 JOIN Pizza AS p ON p.product_id = pi.product_id
                 JOIN Product AS pr ON p.product_id = pr.product_id
-                WHERE pr.product_id = %s
-                GROUP BY pr.product_id
-            """, (item["id"],), one=True)
-            price = row[0] * quantity
-            amount += quantity
-            name = query("SELECT pr.name FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
+                WHERE pr.name = %s
+            """, (item["name"],), one=True)
+            price = row[0] * item.get("quantity", 1)
+            name = item["name"]
 
         elif item["type"] == "drink":
-            row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Drink AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
-            product_id, price = row
-            print(row)
-            price *= quantity
+            row = query("""
+                SELECT pr.price FROM Product AS pr
+                JOIN Drink AS d ON pr.product_id = d.product_id
+                WHERE pr.name = %s
+            """, (item["name"],), one=True)
+            price = row[0] * item.get("quantity", 1)
+            name = item["name"]
             amount += quantity
 
         elif item["type"] == "dessert":
-            row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Dessert AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
-            product_id, price = row
-            price *= quantity
+            row = query("""
+                SELECT pr.price FROM Product AS pr
+                JOIN Dessert AS d ON pr.product_id = d.product_id
+                WHERE pr.name = %s
+            """, (item["name"],), one=True)
+            price = row[0] * item.get("quantity", 1)
+            name = item["name"]
             amount += quantity
 
         else:
             continue 
 
         total += price
-        order_items.append((item["type"], name, quantity, price))
+        order_items.append({
+            "type": item["type"],
+            "name": name,
+            "quantity": quantity,
+            "price": float(price)  # convert Decimal to float for JSON
+        })
+
 
 
     
@@ -131,10 +142,18 @@ def order():
         discount += 0.10 * total
 
     final_total = max(total - discount, 0)
+    return {
+        "items": order_items,
+        "total": float(total),
+        "discount": float(discount),
+        "final_total": float(final_total),
+        "amount": amount
+    }
 
-    delivery = query("SELECT delivery_person_id FROM DeliveryPerson WHERE is_available = TRUE LIMIT 1", one=True)
-    delivery_person_id = delivery[0] if delivery else None
 
+    #delivery = query("SELECT delivery_person_id FROM DeliveryPerson WHERE is_available = TRUE LIMIT 1", one=True)
+    #delivery_person_id = delivery[0] if delivery else None
+'''
     order_id = query(
         "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
         (customer_id, delivery_person_id, amount, final_total),
@@ -160,8 +179,42 @@ def order():
         )
 
     return jsonify({"order_id": order_id, "total": final_total, "discount": discount})
+'''
+
+@app.route("/order/summary", methods=["POST"])
+def order_summary():
+    data = request.json
+    print("Received summary request:", data)  # log incoming payload
+    summary = calculate_order(data["customer_id"], data["items"])
+    print("Calculated summary:", summary)     # log result
+    return jsonify(summary)
+
+@app.route("/order/confirm", methods=["POST"])
+def order_confirm():
+    data = request.json
+    customer_id = data["customer_id"]
+    items = data["items"]
+    delivery_person_id = data.get("delivery_person_id")
+
+    # Recalculate order to validate totals
+    summary = calculate_order(customer_id, items)
+
+    order_id = query(
+        "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
+        (customer_id, delivery_person_id, sum(it["quantity"] for it in summary["items"]), summary["final_total"]),
+        commit=True
+    )
+
+    for it in summary["items"]:
+        product_id = query("SELECT product_id FROM Product WHERE name=%s LIMIT 1", (it["name"],), one=True)[0]
+        query(
+            "INSERT INTO OrderItem (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
+            (order_id, product_id, it["quantity"], it["price"]),
+            commit=True
+        )
+
+    return jsonify({"order_id": order_id, "final_total": summary["final_total"]})
 
 if __name__ == "__main__":
     app.run(debug=True)
     
-print(app.url_map)
