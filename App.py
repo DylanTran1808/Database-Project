@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify
 import mysql.connector
+from flask import render_template
 from dotenv import load_dotenv
 import os
 from datetime import date
@@ -27,22 +28,9 @@ def query(sql, params=None, one=False, commit=False):
     cur.close()
     return result
 
-# @app.route("/menu", methods=["GET"])
-# def menu():
-#     pizzas = db.execute("""
-#         SELECT 
-#             p.name,
-#             SUM(pi.price * pi.quantity) AS total_price
-#         FROM Pizza p
-#         JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
-#         GROUP BY p.name
-#     """)
-#     drinks = db.execute("SELECT dr.name, price FROM Drink dr") # add drinks and desserts table
-#     desserts = db.execute("SELECT de.name, price FROM Dessert de")
-#     return jsonify(
-#         { "pizzas": [ {"name": n, "price": float(p), "label": ("vegan" if v else ("vegetarian" if veg else "non-vegetarian"))} for n, p, v, veg in pizzas], 
-#                     "drinks": [{"name": n, "price": float(p)} for n, p in drinks], 
-#                     "desserts": [{"name": n, "price": float(p)} for n, p in desserts] } )
+@app.route("/")
+def home():
+    return render_template("menu.html")
 
 @app.route("/menu", methods=["GET"])
 def menu():
@@ -51,8 +39,8 @@ def menu():
             pr.name,
             SUM(pi.price * pi.quantity) AS total_price
         FROM Product AS pr
-        JOIN Ingredient AS pi ON p.product_id = pi.product_id
         JOIN Pizza AS p ON p.product_id = pr.product_id
+        JOIN Ingredient AS pi ON p.product_id = pi.product_id
         GROUP BY pr.name
     """)
 
@@ -158,3 +146,5 @@ def order():
 
 if __name__ == "__main__":
     app.run(debug=True)
+    
+print(app.url_map)
