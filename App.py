@@ -48,15 +48,16 @@ def query(sql, params=None, one=False, commit=False):
 def menu():
     pizzas = query("""
         SELECT 
-            p.name,
+            pr.name,
             SUM(pi.price * pi.quantity) AS total_price
-        FROM Pizza p
-        JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
-        GROUP BY p.name
+        FROM Product AS pr
+        JOIN Ingredient AS pi ON p.product_id = pi.product_id
+        JOIN Pizza AS p ON p.product_id = pr.product_id
+        GROUP BY pr.name
     """)
 
-    drinks = query("SELECT name, price FROM Drink")
-    desserts = query("SELECT name, price FROM Dessert")
+    drinks = query("SELECT pr.name, pr.price FROM Drink AS d JOIN Product AS pr ON pr.product_id = d.product_id")
+    desserts = query("SELECT pr.name, pr.price FROM Dessert AS de JOIN Product AS pr ON pr.product_id=de.product_id")
 
     return jsonify({
         "pizzas": [{"name": n, "price": float(p)} for (n, p) in pizzas],
@@ -71,13 +72,14 @@ def order():
     items = data["items"]
 
     total = 0
+    discount = 0
     order_items = []
 
     for item in items: 
         quantity = item.get("quantity", 1)
 
-        if item["type"] == "pizza":
-            row = db.db.execute("""
+        if item["type"] == "pizza": #UPDATD COLUMN
+            row = query("""
                 SELECT SUM(pi.price * pi.quantity) AS price
                 FROM Pizza p
                 JOIN Ingredient pi ON p.pizza_id = pi.pizza_id
@@ -85,15 +87,15 @@ def order():
                 GROUP BY p.pizza_id
             """, (item["id"],), one=True)
             price = row[0] * quantity
-            name = db.db.execute("SELECT name FROM Pizza WHERE pizza_id=%s", (item["id"],), one=True)[0]
+            name = query("SELECT name FROM Pizza WHERE pizza_id=%s", (item["id"],), one=True)[0]
 
         elif item["type"] == "drink":
-            row = db.db.execute("SELECT name, price FROM Drink WHERE drink_id=%s", (item["id"],), one=True)
+            row = query("SELECT name, price FROM Drink WHERE drink_id=%s", (item["id"],), one=True)
             name, price = row
             price *= quantity
 
         elif item["type"] == "dessert":
-            row = db.db.execute("SELECT name, price FROM Dessert WHERE dessert_id=%s", (item["id"],), one=True)
+            row = query("SELECT name, price FROM Dessert WHERE dessert_id=%s", (item["id"],), one=True)
             name, price = row
             price *= quantity
 
@@ -105,7 +107,7 @@ def order():
 
 
     
-    customer = db.execute("SELECT birth_date FROM Customer WHERE customer_id=%s", (customer_id,), one=True)
+    customer = query("SELECT birth_date FROM Customer WHERE customer_id=%s", (customer_id,), one=True)
     birth_date = customer[0]
 
     today = date.today()
@@ -114,17 +116,17 @@ def order():
     if birth_date.month == today.month and birth_date.day == today.day:
     # find cheapest pizza
         pizzas = [item for item in order_items if item[0] == 'pizza']
-    if pizzas:
-        cheapest_pizza_price = min([item[2] for item in pizzas])
-        discount += cheapest_pizza_price
+        if pizzas:
+            cheapest_pizza_price = min([item[2] for item in pizzas])
+            discount += cheapest_pizza_price
     # find cheapest drink
-    drinks = [item for item in order_items if item[0] == 'drink']
-    if drinks:
-        cheapest_drink_price = min([item[2] for item in drinks])
-        discount += cheapest_drink_price
+        drinks = [item for item in order_items if item[0] == 'drink']
+        if drinks:
+            cheapest_drink_price = min([item[2] for item in drinks])
+            discount += cheapest_drink_price
 
 
-    total_pizzas = db.db.execute("""
+    total_pizzas = query("""
     SELECT SUM(quantity)
     FROM OrderItem oi
     JOIN Orders o ON oi.order_id = o.order_id
@@ -136,20 +138,23 @@ def order():
 
     final_total = max(total - discount, 0)
 
-    delivery = db.execute("SELECT delivery_person_id FROM DeliveryPerson WHERE is_available = TRUE LIMIT 1", one=True)
+    delivery = query("SELECT delivery_person_id FROM DeliveryPerson WHERE is_available = TRUE LIMIT 1", one=True)
     delivery_person_id = delivery[0] if delivery else None
 
-    order_id = db.execute(
+    order_id = query(
         "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
         (customer_id, delivery_person_id, total, final_total),
         commit=True
     )
 
     for pizza_id, quantity, price in order_items:
-        db.execute(
+        query(
             "INSERT INTO OrderItem (order_id, pizza_id, type, quantity, price) VALUES (%s, %s, %s, %s, %s)",
             (order_id, pizza_id, "pizza", quantity, price),
             commit=True
         )
 
     return jsonify({"order_id": order_id, "total": final_total, "discount": discount})
+
+if __name__ == "__main__":
+    app.run(debug=True)
