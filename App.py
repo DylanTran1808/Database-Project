@@ -66,7 +66,7 @@ def order():
     for item in items: 
         quantity = item.get("quantity", 1)
        
-        if item["type"] == "pizza": #UPDATD COLUMN
+        if item["type"] == "pizza":
             row = query("""
                 SELECT SUM(pi.price * pi.quantity) AS price
                 FROM Ingredient AS pi
@@ -76,16 +76,17 @@ def order():
                 GROUP BY pr.product_id
             """, (item["id"],), one=True)
             price = row[0] * quantity
-            name = query("SELECT pr.name FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
+            product_id = query("SELECT pr.product_id FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
 
         elif item["type"] == "drink":
-            row = query("SELECT pr.name, pr.price FROM Product AS pr JOIN Drink AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
-            name, price = row
+            row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Drink AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
+            product_id, price = row
+            print(row)
             price *= quantity
 
         elif item["type"] == "dessert":
-            row = query("SELECT pr.name, pr.price FROM Product AS pr JOIN Dessert AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
-            name, price = row
+            row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Dessert AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
+            product_id, price = row
             price *= quantity
 
         else:
@@ -93,7 +94,7 @@ def order():
 
         total += price
         amount += quantity
-        order_items.append((item["type"], name, quantity, price))
+        order_items.append((product_id, quantity, price))
 
 
     
@@ -134,17 +135,14 @@ def order():
 
     order_id = query(
         "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
-        (customer_id, delivery_person_id, total, final_total),
+        (customer_id, delivery_person_id, amount, final_total),
         commit=True
     )
 
-    for type, name, quantity, price in order_items:
+    for product_id, quantity, price in order_items:
         query(
-            f"INSERT INTO Orders (customer_id, delivery_person_id,discount_id, total_amount, total_price) VALUES ({data["customer_id"]},{data["delivery_person_id"]},{amount}, )"
-        )
-        query(
-            "INSERT INTO OrderItem (product_id, quantity, price) VALUES (%s, %s, %s, %s)",
-            (order_id, product_id, "pizza", quantity, price),
+            "INSERT INTO OrderItem (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
+            (order_id, product_id, quantity, price),
             commit=True
         )
 
