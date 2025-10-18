@@ -76,25 +76,27 @@ def order():
                 GROUP BY pr.product_id
             """, (item["id"],), one=True)
             price = row[0] * quantity
-            product_id = query("SELECT pr.product_id FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
+            amount += quantity
+            name = query("SELECT pr.name FROM Product AS pr JOIN Pizza AS p ON p.product_id = pr.product_id WHERE pr.product_id=%s", (item["id"],), one=True)[0]
 
         elif item["type"] == "drink":
             row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Drink AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
             product_id, price = row
             print(row)
             price *= quantity
+            amount += quantity
 
         elif item["type"] == "dessert":
             row = query("SELECT pr.product_id, pr.price FROM Product AS pr JOIN Dessert AS d ON pr.product_id = d.product_id WHERE pr.product_id=%s", (item["id"],), one=True)
             product_id, price = row
             price *= quantity
+            amount += quantity
 
         else:
             continue 
 
         total += price
-        amount += quantity
-        order_items.append((product_id, quantity, price))
+        order_items.append((item["type"], name, quantity, price))
 
 
     
@@ -141,8 +143,19 @@ def order():
 
     for product_id, quantity, price in order_items:
         query(
-            "INSERT INTO OrderItem (order_id, product_id, quantity, price) VALUES (%s, %s, %s, %s)",
-            (order_id, product_id, quantity, price),
+            f"INSERT INTO Orders (customer_id, delivery_person_id,discount_id, total_amount, total_price) VALUES ({data['customer_id']},{data['delivery_person_id']},{amount}, {total})"
+        )
+        query(
+            """
+            INSERT INTO OrderItem (order_id, product_id, quantity, price) 
+            VALUES (
+                %s, 
+                (SELECT pr.product_id FROM Product AS pr WHERE pr.name=%s LIMIT 1), 
+                %s, 
+                %s
+            )
+            """,
+            (order_id, name, quantity, price),
             commit=True
         )
 
