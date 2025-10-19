@@ -223,6 +223,29 @@ def order_confirm():
 
     # Recalculate order to validate totals
     summary = calculate_order(customer_id, items)
+    customer = query("SELECT postcode FROM Customer WHERE customer_id = %s", (customer_id,), one=True)
+    # if not customer:
+    #     return jsonify({"error": "Customer not found"}), 400
+
+    # customer_postcode = customer[0]
+
+    # # Find available delivery person for same postcode
+    # delivery_person = query("""
+    #     SELECT delivery_person_id FROM DeliveryPerson
+    #     WHERE is_available = TRUE AND postcode = %s
+    #     ORDER BY delivery_person_id ASC
+    #     LIMIT 1
+    # """, (customer_postcode,), one=True)
+
+    # if delivery_person:
+    #     delivery_person_id = delivery_person[0]
+    #     assigned = True
+    #     query("UPDATE DeliveryPerson SET is_available = FALSE WHERE delivery_person_id = %s",
+    #           (delivery_person_id,), commit=True)
+    #     threading.Thread(target=mark_available_after_30min, args=(delivery_person_id,)).start()
+    # else:
+    #     delivery_person_id = None
+    #     assigned = False
 
     order_id = query(
         "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
@@ -237,17 +260,51 @@ def order_confirm():
             (order_id, product_id, it["quantity"], it["price"]),
             commit=True
         )
+    # if assigned:
+    #     status_msg = f"Assigned to delivery person ID {delivery_person_id}"
+    # else:
+    #     status_msg = f"No available delivery person in postcode {customer_postcode}. Order pending."
 
-    return jsonify({"order_id": order_id, "final_total": summary["final_total"]})
-'''
-    def mark_available_after_30min(delivery_person_id):
-    """Background thread to reset delivery person availability after 30 minutes."""
-    print(f"⏳ Delivery person {delivery_person_id} will become available in 30 minutes...")
-    time.sleep(1800)  # 30 minutes = 1800 seconds
-    query("UPDATE DeliveryPerson SET is_available = TRUE WHERE delivery_person_id = %s",
-          (delivery_person_id,), commit=True)
-    print(f"✅ Delivery person {delivery_person_id} is now available again.")
-    '''
+    return jsonify({"order_id": order_id, "final_total": summary["final_total"], "delivery_status": status_msg})
+
+# def mark_available_after_30min(delivery_person_id):
+#     """Background thread to reset delivery person availability after 30 minutes."""
+#     print(f"⏳ Delivery person {delivery_person_id} will become available in 30 minutes...")
+#     time.sleep(1800)  # 30 minutes = 1800 seconds
+#     query("UPDATE DeliveryPerson SET is_available = TRUE WHERE delivery_person_id = %s",
+#         (delivery_person_id,), commit=True)
+#     print(f"✅ Delivery person {delivery_person_id} is now available again.")
+    
+# def assign_oldest_unassigned(delivery_person_id):
+#     """If any undelivered orders exist for this postcode, assign the oldest one."""
+#     # Get delivery person postcode
+#     person = query("SELECT postcode FROM DeliveryPerson WHERE delivery_person_id = %s", (delivery_person_id,), one=True)
+#     if not person:
+#         return
+#     dp_postcode = person[0]
+
+#     order = query("""
+#         SELECT o.order_id
+#         FROM Orders o
+#         JOIN Customer c ON o.customer_id = c.customer_id
+#         WHERE o.delivery_person_id IS NULL AND c.postcode = %s
+#         ORDER BY o.order_time ASC
+#         LIMIT 1
+#     """, (dp_postcode,), one=True)
+    
+#     if order:
+#         order_id = order[0]
+#         print(f"🚚 Reassigning available delivery person {delivery_person_id} to pending order {order_id}")
+#         query("""
+#             UPDATE Orders
+#             SET delivery_person_id = %s
+#             WHERE order_id = %s
+#         """, (delivery_person_id, order_id), commit=True)
+#         query("UPDATE DeliveryPerson SET is_available = FALSE WHERE delivery_person_id = %s",
+#               (delivery_person_id,), commit=True)
+#         threading.Thread(target=mark_available_after_30min, args=(delivery_person_id,)).start()
+
+
 if __name__ == "__main__":
     app.run(debug=True)
     

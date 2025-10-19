@@ -88,13 +88,15 @@ for i in range(5):
     cursor.execute(f"INSERT INTO Customer (name, postcode, birth_date, address) VALUES ('{customers[i]['name']}', '{customers[i]['postcode']}', '{customers[i]['birth_date']}', '{customers[i]['address']}')")
     
 def generate_delivery_person():
+    allowed_postcodes = ["AB12", "CD34", "EF56", "GH78"]
     return {
         "gender": random.choice(['M', 'F']),
-        "age": random.randint(18, 50)
+        "age": random.randint(18, 50),
+        "postcode": random.choice(allowed_postcodes)
     }
 delivery_persons = [generate_delivery_person() for _ in range(3)]
 for i in range(3):
-    cursor.execute(f"INSERT INTO DeliveryPerson (gender, age) VALUES ('{delivery_persons[i]['gender']}', {delivery_persons[i]['age']})")
+    cursor.execute(f"INSERT INTO DeliveryPerson (gender, age, postcode) VALUES ('{delivery_persons[i]['gender']}', {delivery_persons[i]['age']}, '{delivery_persons[i]['postcode']}')")
 conn.commit()
 cursor.close()
 conn.close()
