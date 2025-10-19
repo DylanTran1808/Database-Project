@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, redirect, url_for
 import mysql.connector
 from flask import render_template
 from dotenv import load_dotenv
@@ -28,12 +28,33 @@ def query(sql, params=None, one=False, commit=False):
     cur.close()
     return result
 
-@app.route('/')
-def home():
+@app.route('/', methods=['GET', 'POST'])
+def customer_login():
+    if request.method == 'POST':
+        name = request.form.get('name')
+        postcode = request.form.get('postcode')
+        birthday = request.form.get('birthday')
+        address = request.form.get('address')
+
+        # Save to database
+        query("""
+            INSERT INTO Customer (name, postcode, birth_date, address)
+            VALUES (%s, %s, %s, %s)
+        """, (name, postcode, birthday, address), commit=True)
+
+        # Redirect to menu page after successful form submission
+        return redirect(url_for('render_menu_page'))
+
+    # If GET request, show the customer login page
+    return render_template('customer_login.html')
+
+
+@app.route("/menu")
+def render_menu_page():
     return render_template('menu.html')
 
-@app.route("/menu", methods=["GET"])
-def menu():
+@app.route("/menu/get_menu")
+def get_menu():
     pizzas = query("""
         SELECT 
             pr.name,
@@ -47,12 +68,13 @@ def menu():
     drinks = query("SELECT pr.name, pr.price FROM Drink AS d JOIN Product AS pr ON pr.product_id = d.product_id")
     desserts = query("SELECT pr.name, pr.price FROM Dessert AS de JOIN Product AS pr ON pr.product_id=de.product_id")
 
+     # Keep the data you had in jsonify — just pass it to the template
     return jsonify({
         "pizzas": [{"name": n, "price": float(p)} for (n, p) in pizzas],
         "drinks": [{"name": n, "price": float(p)} for (n, p) in drinks],
         "desserts": [{"name": n, "price": float(p)} for (n, p) in desserts]
     })
-                    
+        
 #@app.route("/order", methods=["POST"])
 def calculate_order(customer_id, items):
     #data = request.json
@@ -139,9 +161,9 @@ def calculate_order(customer_id, items):
 """, (customer_id,), one=True)[0] or 0
     
     if total_pizzas >= 10:
-        discount += 0.10 * total
+        discount += 0.10 * float(total)
 
-    final_total = max(total - discount, 0)
+    final_total = max(float(total) - discount, 0)
     return {
         "items": order_items,
         "total": float(total),

@@ -8,7 +8,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // --- Load menu from backend ---
   try {
-    const res = await fetch("/menu");
+    const res = await fetch("/menu/get_menu");
     const data = await res.json();
     console.log("Menu loaded:", data);
 
