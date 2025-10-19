@@ -64,6 +64,7 @@ entity "DeliveryPerson" as DP {
   * delivery_person_id : int <<PK>>
   --
   * is_available : boolean
+  * postcode : varchar
   * gender : varchar
   * age : int
 }

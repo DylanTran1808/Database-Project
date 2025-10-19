@@ -95,8 +95,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       summaryText += `Total: $${summary.total.toFixed(2)}\nDiscount: $${summary.discount.toFixed(2)}\nFinal: $${summary.final_total.toFixed(2)}`;
 
-      const delivery_person_id = prompt(summaryText + "\nEnter delivery person ID:");
-      if (!delivery_person_id) return alert("Order cancelled!");
 
       // --- Step 3: Confirm order ---
       const confirmRes = await fetch("/order/confirm", {

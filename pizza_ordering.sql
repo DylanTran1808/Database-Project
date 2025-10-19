@@ -55,6 +55,7 @@ CREATE TABLE DeliveryPerson (
     is_available BOOLEAN NOT NULL DEFAULT TRUE,
     gender VARCHAR(10),
     age INT,
+    postcode VARCHAR(20),
     PRIMARY KEY (delivery_person_id)
 );
 

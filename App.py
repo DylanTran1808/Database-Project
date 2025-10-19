@@ -3,7 +3,9 @@ import mysql.connector
 from flask import render_template
 from dotenv import load_dotenv
 import os
-from datetime import date
+from datetime import date, datetime
+import threading
+import time
 load_dotenv()
 db_user = os.getenv("password")
 app = Flask(__name__)
@@ -153,9 +155,10 @@ def calculate_order(customer_id, items):
 
 
     total_pizzas = query("""
-    SELECT SUM(quantity)
-    FROM OrderItem AS oi
-    JOIN Orders AS o ON oi.order_id = o.order_id
+    SELECT SUM(oi.quantity)
+    FROM Orders AS o
+    JOIN Customer AS c ON c.customer_id = o.customer_id
+    JOIN OrderItem AS oi ON oi.order_id = o.order_id
     JOIN Product AS pr ON oi.product_id = pr.product_id
     WHERE o.customer_id=%s AND pr.is_pizza = 1;
 """, (customer_id,), one=True)[0] or 0
@@ -236,7 +239,15 @@ def order_confirm():
         )
 
     return jsonify({"order_id": order_id, "final_total": summary["final_total"]})
-
+'''
+    def mark_available_after_30min(delivery_person_id):
+    """Background thread to reset delivery person availability after 30 minutes."""
+    print(f"⏳ Delivery person {delivery_person_id} will become available in 30 minutes...")
+    time.sleep(1800)  # 30 minutes = 1800 seconds
+    query("UPDATE DeliveryPerson SET is_available = TRUE WHERE delivery_person_id = %s",
+          (delivery_person_id,), commit=True)
+    print(f"✅ Delivery person {delivery_person_id} is now available again.")
+    '''
 if __name__ == "__main__":
     app.run(debug=True)
     
