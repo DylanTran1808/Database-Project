@@ -85,3 +85,32 @@ main {
 #checkout-btn:hover {
   background: #ff2b00;
 }
+
+/* --- Header layout adjustment --- */
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* --- Back to Home button --- */
+.back-home {
+  position: absolute;
+  left: 20px;
+  background: white;
+  color: #ff4b2b;
+  border: 2px solid white;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-weight: bold;
+  font-size: 15px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.back-home:hover {
+  background: #ff4b2b;
+  color: white;
+  border-color: white;
+}

@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", async () => {
+  const homeBtn = document.getElementById("home-btn");
+  if (homeBtn) {
+    homeBtn.addEventListener("click", () => {
+      window.location.href = "/";  // redirect to home route
+    });
+  }
   const menuContainer = document.getElementById("menu-container");
   const basketList = document.getElementById("basket");
   const checkoutBtn = document.getElementById("checkout-btn");
