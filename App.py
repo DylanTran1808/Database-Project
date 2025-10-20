@@ -219,33 +219,32 @@ def order_confirm():
     data = request.json
     customer_id = data["customer_id"]
     items = data["items"]
-    delivery_person_id = data.get("delivery_person_id")
 
     # Recalculate order to validate totals
     summary = calculate_order(customer_id, items)
     customer = query("SELECT postcode FROM Customer WHERE customer_id = %s", (customer_id,), one=True)
-    # if not customer:
-    #     return jsonify({"error": "Customer not found"}), 400
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 400
 
-    # customer_postcode = customer[0]
+    customer_postcode = customer[0]
 
-    # # Find available delivery person for same postcode
-    # delivery_person = query("""
-    #     SELECT delivery_person_id FROM DeliveryPerson
-    #     WHERE is_available = TRUE AND postcode = %s
-    #     ORDER BY delivery_person_id ASC
-    #     LIMIT 1
-    # """, (customer_postcode,), one=True)
-
-    # if delivery_person:
-    #     delivery_person_id = delivery_person[0]
-    #     assigned = True
-    #     query("UPDATE DeliveryPerson SET is_available = FALSE WHERE delivery_person_id = %s",
-    #           (delivery_person_id,), commit=True)
-    #     threading.Thread(target=mark_available_after_30min, args=(delivery_person_id,)).start()
-    # else:
-    #     delivery_person_id = None
-    #     assigned = False
+     # Find available delivery person for same postcode
+    delivery_person = query("""
+        SELECT delivery_person_id FROM DeliveryPerson
+        WHERE is_available = TRUE AND postcode = %s
+        ORDER BY delivery_person_id ASC
+        LIMIT 1
+    """, (customer_postcode,), one=True)
+    
+    if delivery_person:
+        delivery_person_id = delivery_person[0]
+        assigned = True
+        query("UPDATE DeliveryPerson SET is_available = FALSE WHERE delivery_person_id = %s",
+              (delivery_person_id,), commit=True)
+        threading.Thread(target=mark_available_after_30min, args=(delivery_person_id,)).start()
+    else:
+        delivery_person_id = None
+        assigned = False
 
     order_id = query(
         "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
@@ -260,20 +259,20 @@ def order_confirm():
             (order_id, product_id, it["quantity"], it["price"]),
             commit=True
         )
-    # if assigned:
-    #     status_msg = f"Assigned to delivery person ID {delivery_person_id}"
-    # else:
-    #     status_msg = f"No available delivery person in postcode {customer_postcode}. Order pending."
+    if assigned:
+        status_msg = f"Assigned to delivery person ID {delivery_person_id}"
+    else:
+        status_msg = f"No available delivery person in postcode {customer_postcode}. Order pending."
 
     return jsonify({"order_id": order_id, "final_total": summary["final_total"], "delivery_status": status_msg})
 
-# def mark_available_after_30min(delivery_person_id):
-#     """Background thread to reset delivery person availability after 30 minutes."""
-#     print(f"⏳ Delivery person {delivery_person_id} will become available in 30 minutes...")
-#     time.sleep(1800)  # 30 minutes = 1800 seconds
-#     query("UPDATE DeliveryPerson SET is_available = TRUE WHERE delivery_person_id = %s",
-#         (delivery_person_id,), commit=True)
-#     print(f"✅ Delivery person {delivery_person_id} is now available again.")
+def mark_available_after_30min(delivery_person_id):
+    """Background thread to reset delivery person availability after 30 minutes."""
+    print(f"⏳ Delivery person {delivery_person_id} will become available in 30 minutes...")
+    time.sleep(1800)  # 30 minutes = 1800 seconds
+    query("UPDATE DeliveryPerson SET is_available = TRUE WHERE delivery_person_id = %s",
+        (delivery_person_id,), commit=True)
+    print(f"✅ Delivery person {delivery_person_id} is now available again.")
     
 # def assign_oldest_unassigned(delivery_person_id):
 #     """If any undelivered orders exist for this postcode, assign the oldest one."""
