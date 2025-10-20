@@ -87,146 +87,83 @@ def get_menu():
         "desserts": [{"name": n, "price": float(p)} for (n, p) in desserts]
     })
         
-#@app.route("/order", methods=["POST"])
-def calculate_order(customer_id, items):
-    #data = request.json
-    #customer_id = data["customer_id"]
-    #items = data["items"]
-    amount =0
+def calculate_order(customer_id, items, discount_percent=0):
     total = 0
-    discount = 0
+    discount_amount = 0
     order_items = []
 
-    for item in items: 
+    for item in items:
         quantity = item.get("quantity", 1)
-       
-        if item["type"] == "pizza":
+        name = item["name"]
+        item_type = item["type"]
+
+        if item_type == "pizza":
             row = query("""
                 SELECT SUM(pi.price * pi.quantity) AS price
                 FROM Ingredient AS pi
                 JOIN Pizza AS p ON p.product_id = pi.product_id
                 JOIN Product AS pr ON p.product_id = pr.product_id
                 WHERE pr.name = %s
-            """, (item["name"],), one=True)
-            price = row[0] * item.get("quantity", 1)
-            name = item["name"]
+            """, (name,), one=True)
+            price = float(row[0]) * quantity
 
-        elif item["type"] == "drink":
+        elif item_type == "drink":
             row = query("""
                 SELECT pr.price FROM Product AS pr
                 JOIN Drink AS d ON pr.product_id = d.product_id
                 WHERE pr.name = %s
-            """, (item["name"],), one=True)
-            price = row[0] * item.get("quantity", 1)
-            name = item["name"]
-            amount += quantity
+            """, (name,), one=True)
+            price = float(row[0]) * quantity
 
-        elif item["type"] == "dessert":
+        elif item_type == "dessert":
             row = query("""
                 SELECT pr.price FROM Product AS pr
-                JOIN Dessert AS d ON pr.product_id = d.product_id
+                JOIN Dessert AS de ON pr.product_id = de.product_id
                 WHERE pr.name = %s
-            """, (item["name"],), one=True)
-            price = row[0] * item.get("quantity", 1)
-            name = item["name"]
-            amount += quantity
-
+            """, (name,), one=True)
+            price = float(row[0]) * quantity
         else:
-            continue 
+            continue
 
-        total += price
         order_items.append({
-            "type": item["type"],
+            "type": item_type,
             "name": name,
             "quantity": quantity,
-            "price": float(price)  # convert Decimal to float for JSON
+            "price": price
         })
+        total += price
 
-
-
-    
+    # Birthday discount
     customer = query("SELECT birth_date FROM Customer WHERE customer_id=%s", (customer_id,), one=True)
     birth_date = customer[0]
-
     today = date.today()
 
-
+    birthday_discount = 0
     if birth_date.month == today.month and birth_date.day == today.day:
-    # find cheapest pizza
-        pizzas = [item for item in order_items if item[0] == 'pizza']
+        pizzas = [it for it in order_items if it["type"] == "pizza"]
+        drinks = [it for it in order_items if it["type"] == "drink"]
         if pizzas:
-            cheapest_pizza_price = min([item[2] for item in pizzas])
-            discount += cheapest_pizza_price
-    # find cheapest drink
-        drinks = [item for item in order_items if item[0] == 'drink']
+            birthday_discount += min(p["price"] for p in pizzas)
         if drinks:
-            cheapest_drink_price = min([item[2] for item in drinks])
-            discount += cheapest_drink_price
+            birthday_discount += min(d["price"] for d in drinks)
 
+    # Percentage discount (from discount code)
+    discount_amount = total * (discount_percent / 100.0)
 
-#     total_pizzas = query("""
-#     SELECT SUM(oi.quantity)
-#     FROM Orders AS o
-#     JOIN Customer AS c ON c.customer_id = o.customer_id
-#     JOIN OrderItem AS oi ON oi.order_id = o.order_id
-#     JOIN Product AS pr ON oi.product_id = pr.product_id
-#     WHERE o.customer_id=%s AND pr.is_pizza = 1;
-# """, (customer_id,), one=True)[0] or 0
-    
-        
-    # TEMPORARY TEST: count pizzas in the current order only
-    total_pizzas = sum(item["quantity"] for item in items if item["type"] == "pizza")
-    total_pizzas = query("""
-    SELECT SUM(oi.quantity)
-    FROM Orders AS o
-    JOIN Customer AS c ON c.customer_id = o.customer_id
-    JOIN OrderItem AS oi ON oi.order_id = o.order_id
-    JOIN Product AS pr ON oi.product_id = pr.product_id
-    WHERE o.customer_id=%s AND pr.is_pizza = 1;
-""", (customer_id,), one=True)[0] or 0
-    
+    # 10 pizzas offer
+    total_pizzas = sum(it["quantity"] for it in order_items if it["type"] == "pizza")
     if total_pizzas >= 10:
-        discount += 0.10 * float(total)
+        discount_amount += total * 0.10
 
-    final_total = max(float(total) - discount, 0)
+    final_total = max(total - discount_amount - birthday_discount, 0)
+
     return {
         "items": order_items,
-        "total": float(total),
-        "discount": float(discount),
-        "final_total": float(final_total),
-        "amount": amount
+        "total": round(total, 2),
+        "discount": round(discount_amount + birthday_discount, 2),
+        "final_total": round(final_total, 2)
     }
 
-
-    #delivery = query("SELECT delivery_person_id FROM DeliveryPerson WHERE is_available = TRUE LIMIT 1", one=True)
-    #delivery_person_id = delivery[0] if delivery else None
-'''
-    order_id = query(
-        "INSERT INTO Orders (customer_id, delivery_person_id, total_amount, total_price) VALUES (%s, %s, %s, %s)",
-        (customer_id, delivery_person_id, amount, final_total),
-        commit=True
-    )
-
-    for product_id, quantity, price in order_items:
-        query(
-            f"INSERT INTO Orders (customer_id, delivery_person_id,discount_id, total_amount, total_price) VALUES ({data['customer_id']},{data['delivery_person_id']},{amount}, {total})"
-        )
-        query(
-            """
-            INSERT INTO OrderItem (order_id, product_id, quantity, price) 
-            VALUES (
-                %s, 
-                (SELECT pr.product_id FROM Product AS pr WHERE pr.name=%s LIMIT 1), 
-                %s, 
-                %s
-            )
-            """,
-            (order_id, name, quantity, price),
-            commit=True
-        )
-
-    return jsonify({"order_id": order_id, "total": final_total, "discount": discount})
-'''
 
 @app.route("/order/summary", methods=["POST"])
 def order_summary():
@@ -282,14 +219,15 @@ def order_confirm():
             (order_id, product_id, it["quantity"], it["price"]),
             commit=True
         )
-
-    return jsonify({"customer_id": customer_id,"order_id": order_id, "final_total": summary["final_total"]})
+        
     if assigned:
         status_msg = f"Assigned to delivery person ID {delivery_person_id}"
     else:
         status_msg = f"No available delivery person in postcode {customer_postcode}. Order pending."
 
-    return jsonify({"order_id": order_id, "final_total": summary["final_total"], "delivery_status": status_msg})
+
+    return jsonify({"customer_id": customer_id,"order_id": order_id, "final_total": summary["final_total"], "delivery_status": status_msg})
+    
 
 def mark_available_after_30min(delivery_person_id):
     """Background thread to reset delivery person availability after 30 minutes."""
