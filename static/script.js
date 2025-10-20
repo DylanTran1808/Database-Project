@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Checkout clicked. Basket:", basket);
     if (basket.length === 0) return alert("Your basket is empty!");
 
-    const customer_id = 1; // example
+    // const customer_id =1
 
     try {
       // --- Step 1: Get order summary ---
@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const result = await confirmRes.json();
       console.log("Order confirmed:", result);
 
-      alert(`✅ Order placed! Order ID: ${result.order_id}, Final Total: $${result.final_total.toFixed(2)}`);
+      alert(`✅ Order placed! cus_id: ${result.customer_id}, Order ID: ${result.order_id}, Final Total: $${result.final_total.toFixed(2)}`);
 
       // Clear basket
       basket = [];

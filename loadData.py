@@ -75,17 +75,18 @@ for item in menu.itertuples():
 # Load ingredients' data
 # Load customers' data
 fake = Faker()
-def generate_customer():
-    return {
-        "name": fake.name(),
-        "postcode": fake.postcode(),
-        "birth_date": fake.date_of_birth(minimum_age=18, maximum_age=90).strftime("%Y-%m-%d"),
-        "address": f"{fake.building_number()} {fake.street_name()}, {fake.city()}"
-    }
+# def generate_customer():
+#     return {
+#         "name": fake.name(),
+#         "postcode": fake.postcode(),
+#         "birth_date": fake.date_of_birth(minimum_age=18, maximum_age=90).strftime("%Y-%m-%d"),
+#         "address": f"{fake.building_number()} {fake.stre ter
+# et_name()}, {fake.city()}"
+#     }
 
-customers = [generate_customer() for _ in range(5)]
-for i in range(5):
-    cursor.execute(f"INSERT INTO Customer (name, postcode, birth_date, address) VALUES ('{customers[i]['name']}', '{customers[i]['postcode']}', '{customers[i]['birth_date']}', '{customers[i]['address']}')")
+# customers = [generate_customer() for _ in range(5)]
+# for i in range(5):
+#     cursor.execute(f"INSERT INTO Customer (name, postcode, birth_date, address) VALUES ('{customers[i]['name']}', '{customers[i]['postcode']}', '{customers[i]['birth_date']}', '{customers[i]['address']}')")
     
 def generate_delivery_person():
     return {
