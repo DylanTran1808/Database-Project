@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <title>Menu</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  
+  <!-- Inject customer_id dynamically from Flask -->
+  <script>
+    const customer_id = {{ customer_id | tojson }};
+  </script>
+
+  <!-- Load your main JavaScript file after defining customer_id -->
   <script src="{{ url_for('static', filename='script.js') }}" defer></script>
 </head>
 <body>

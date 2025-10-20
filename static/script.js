@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Checkout clicked. Basket:", basket);
     if (basket.length === 0) return alert("Your basket is empty!");
 
-    const customer_id = 1; // example
+    // const customer_id =1
 
     try {
       // --- Step 1: Get order summary ---
@@ -89,10 +89,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       // --- Step 2: Show summary and ask for delivery person ---
-      let summaryText = "Order Summary:\n";
+      let grouped = {}; // aggregate items by name
+
       summary.items.forEach(it => {
+        if (!grouped[it.name]) {
+          grouped[it.name] = { ...it }; // copy item
+        } else {
+          grouped[it.name].quantity += it.quantity;
+          grouped[it.name].price += it.price; // total combined price
+        }
+      });
+
+      // Build compact summary text
+      let summaryText = "Order Summary:\n";
+      Object.values(grouped).forEach(it => {
         summaryText += `${it.name} x${it.quantity} - $${it.price.toFixed(2)}\n`;
       });
+
       summaryText += `Total: $${summary.total.toFixed(2)}\nDiscount: $${summary.discount.toFixed(2)}\nFinal: $${summary.final_total.toFixed(2)}`;
       
       // --- Step 3: Confirm order ---
@@ -112,7 +125,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const result = await confirmRes.json();
       console.log("Order confirmed:", result);
 
-      alert(`✅ Order placed! Order ID: ${result.order_id}, Final Total: $${result.final_total.toFixed(2)}`);
+      alert(`✅ Order placed! cus_id: ${result.customer_id}, Order ID: ${result.order_id}, Final Total: $${result.final_total.toFixed(2)}`);
 
       // Clear basket
       basket = [];

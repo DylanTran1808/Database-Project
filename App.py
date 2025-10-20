@@ -38,14 +38,23 @@ def customer_login():
         birthday = request.form.get('birthday')
         address = request.form.get('address')
 
-        # Save to database
-        query("""
+        # check exsiting customer
+        existing_customer = query("""
+            SELECT customer_id FROM Customer
+            WHERE name=%s AND postcode=%s AND birth_date=%s AND address=%s
+        """, (name, postcode, birthday, address), one=True)
+        if existing_customer:
+            customer_id = existing_customer[0]
+            return redirect(url_for('render_menu_page', customer_id=customer_id))
+        
+        # Save to database and get new customer_id
+        customer_id = query("""
             INSERT INTO Customer (name, postcode, birth_date, address)
             VALUES (%s, %s, %s, %s)
         """, (name, postcode, birthday, address), commit=True)
 
         # Redirect to menu page after successful form submission
-        return redirect(url_for('render_menu_page'))
+        return redirect(url_for('render_menu_page', customer_id=customer_id))
 
     # If GET request, show the customer login page
     return render_template('customer_login.html')
@@ -53,7 +62,8 @@ def customer_login():
 
 @app.route("/menu")
 def render_menu_page():
-    return render_template('menu.html')
+    customer_id = request.args.get('customer_id', None)
+    return render_template('menu.html', customer_id=customer_id)
 
 @app.route("/menu/get_menu")
 def get_menu():
@@ -154,6 +164,18 @@ def calculate_order(customer_id, items):
             discount += cheapest_drink_price
 
 
+#     total_pizzas = query("""
+#     SELECT SUM(oi.quantity)
+#     FROM Orders AS o
+#     JOIN Customer AS c ON c.customer_id = o.customer_id
+#     JOIN OrderItem AS oi ON oi.order_id = o.order_id
+#     JOIN Product AS pr ON oi.product_id = pr.product_id
+#     WHERE o.customer_id=%s AND pr.is_pizza = 1;
+# """, (customer_id,), one=True)[0] or 0
+    
+        
+    # TEMPORARY TEST: count pizzas in the current order only
+    total_pizzas = sum(item["quantity"] for item in items if item["type"] == "pizza")
     total_pizzas = query("""
     SELECT SUM(oi.quantity)
     FROM Orders AS o
@@ -212,6 +234,7 @@ def order_summary():
     print("Received summary request:", data)  # log incoming payload
     summary = calculate_order(data["customer_id"], data["items"])
     print("Calculated summary:", summary)     # log result
+    
     return jsonify(summary)
 
 @app.route("/order/confirm", methods=["POST"])
@@ -259,6 +282,8 @@ def order_confirm():
             (order_id, product_id, it["quantity"], it["price"]),
             commit=True
         )
+
+    return jsonify({"customer_id": customer_id,"order_id": order_id, "final_total": summary["final_total"]})
     if assigned:
         status_msg = f"Assigned to delivery person ID {delivery_person_id}"
     else:
