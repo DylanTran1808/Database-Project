@@ -89,10 +89,23 @@ document.addEventListener("DOMContentLoaded", async () => {
       }
 
       // --- Step 2: Show summary and ask for delivery person ---
-      let summaryText = "Order Summary:\n";
+      let grouped = {}; // aggregate items by name
+
       summary.items.forEach(it => {
+        if (!grouped[it.name]) {
+          grouped[it.name] = { ...it }; // copy item
+        } else {
+          grouped[it.name].quantity += it.quantity;
+          grouped[it.name].price += it.price; // total combined price
+        }
+      });
+
+      // Build compact summary text
+      let summaryText = "Order Summary:\n";
+      Object.values(grouped).forEach(it => {
         summaryText += `${it.name} x${it.quantity} - $${it.price.toFixed(2)}\n`;
       });
+
       summaryText += `Total: $${summary.total.toFixed(2)}\nDiscount: $${summary.discount.toFixed(2)}\nFinal: $${summary.final_total.toFixed(2)}`;
 
       const delivery_person_id = prompt(summaryText + "\nEnter delivery person ID:");
