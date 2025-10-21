@@ -89,15 +89,21 @@ fake = Faker()
 #     cursor.execute(f"INSERT INTO Customer (name, postcode, birth_date, address) VALUES ('{customers[i]['name']}', '{customers[i]['postcode']}', '{customers[i]['birth_date']}', '{customers[i]['address']}')")
     
 def generate_delivery_person():
-    allowed_postcodes = ["AB12", "CD34", "EF56", "GH78"]
+    
     return {
         "gender": random.choice(['M', 'F']),
         "age": random.randint(18, 50),
-        "postcode": random.choice(allowed_postcodes)
     }
-delivery_persons = [generate_delivery_person() for _ in range(3)]
-for i in range(3):
-    cursor.execute(f"INSERT INTO DeliveryPerson (gender, age, postcode) VALUES ('{delivery_persons[i]['gender']}', {delivery_persons[i]['age']}, '{delivery_persons[i]['postcode']}')")
+    
+allowed_postcodes = ["AB12", "CD34", "EF56", "GH78"]
+delivery_persons = [generate_delivery_person() for _ in range(len(allowed_postcodes))]
+for i in range(len(allowed_postcodes)):
+    cursor.execute(f"INSERT INTO DeliveryPerson (gender, age, postcode) VALUES ('{delivery_persons[i]['gender']}', {delivery_persons[i]['age']}, '{allowed_postcodes[i]}')")
+    
+sample_discounts = ["OFF10","OFF20","OFF18"]
+discount_percentages = [10.0,20.0,18.0]
+for code in sample_discounts:
+    cursor.execute(f"INSERT INTO discountCode (code, percentage) VALUES ('{code}','{discount_percentages[sample_discounts.index(code)]}')")
 conn.commit()
 cursor.close()
 conn.close()

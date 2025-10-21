@@ -62,7 +62,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     console.log("Checkout clicked. Basket:", basket);
     if (basket.length === 0) return alert("Your basket is empty!");
 
-    // const customer_id =1
+    const discountCode = document.getElementById("discount-code")?.value.trim() || "";
 
     try {
       // --- Step 1: Get order summary ---
@@ -71,6 +71,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customer_id,
+          discount_code: discountCode,
           items: basket.map(it => ({
             type: it.type,
             name: it.name, // send name only
@@ -106,8 +107,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         summaryText += `${it.name} x${it.quantity} - $${it.price.toFixed(2)}\n`;
       });
 
-      summaryText += `Total: $${summary.total.toFixed(2)}\nDiscount: $${summary.discount.toFixed(2)}\nFinal: $${summary.final_total.toFixed(2)}`;
-      
+      summaryText += `Total: $${summary.total.toFixed(2)}\n`;
+      summaryText += `Discount (${summary.code_used || "None"}): -$${summary.discount.toFixed(2)}\n`;
+      summaryText += `Final: $${summary.final_total.toFixed(2)}`;
+
+      alert(summaryText);
+
       // --- Step 3: Confirm order ---
       const confirmRes = await fetch("/order/confirm", {
         method: "POST",
@@ -115,7 +120,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       body: JSON.stringify({
           customer_id,
           items: summary.items,
-          discount: summary.discount
+          discount: summary.discount,
+          discount_code: summary.code_used
       })
 
       });

@@ -30,6 +30,33 @@ def query(sql, params=None, one=False, commit=False):
     cur.close()
     return result
 
+# --- Discount code checker ---
+def validate_discount_code(code: str):
+    if not code:
+        return ("none", 0.0)
+
+    # --- Fetch discount code details from DB ---
+    sql = """
+        SELECT code, percentage
+        FROM DiscountCode
+        WHERE code = %s AND used = FALSE
+        LIMIT 1
+    """
+    result = query(sql, (code,), one=True)
+
+    # No valid or unused code found
+    if not result:
+        return (0.0)
+
+    # Because your query() uses dictionary=False,
+    # result will be a tuple, not a dict.
+    # Tuple order: (code, type, value)
+    discount_code, discount_value = result
+
+
+    return (float(discount_value))
+
+
 @app.route('/', methods=['GET', 'POST'])
 def customer_login():
     if request.method == 'POST':
@@ -170,6 +197,14 @@ def order_summary():
     data = request.json
     print("Received summary request:", data)  # log incoming payload
     summary = calculate_order(data["customer_id"], data["items"])
+    discount_code = data.get("discount_code", "").strip().upper()  # 🟢 retrieve discount code
+    discount_percent = validate_discount_code(discount_code)  # 🟢 validate and get percentage
+    
+    if discount_percent > 0:
+        summary = calculate_order(data["customer_id"], data["items"], discount_percent)  # 🟢 recalculate with discount
+        #UPDATE USED
+        query("UPDATE DiscountCode SET used = TRUE WHERE code = %s", (discount_code,), commit=True)
+    
     print("Calculated summary:", summary)     # log result
     
     return jsonify(summary)

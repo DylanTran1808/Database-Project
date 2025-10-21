@@ -111,9 +111,9 @@ CREATE TABLE Ingredient (
 -- ========================
 CREATE TABLE DiscountCode (
     discount_id INT AUTO_INCREMENT,
+    code VARCHAR(50) NOT NULL,
     percentage DECIMAL(5,2),
-    cost DECIMAL(10,2),
-    type VARCHAR(50),
+    used BOOLEAN DEFAULT FALSE,   
     PRIMARY KEY (discount_id)
 );
 
