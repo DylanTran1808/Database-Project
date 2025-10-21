@@ -131,8 +131,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       const result = await confirmRes.json();
       console.log("Order confirmed:", result);
 
-      alert(`✅ Order placed! cus_id: ${result.customer_id}, Order ID: ${result.order_id}, Final Total: $${result.final_total.toFixed(2)}`);
-
+      alert(`✅ Order placed!
+      Customer ID: ${result.customer_id}
+      Order ID: ${result.order_id}
+      Discount: $${result.discount.toFixed(2)}
+      Final Total: $${result.final_total.toFixed(2)}
+      Status: ${result.delivery_status}`);
       // Clear basket
       basket = [];
       renderBasket();

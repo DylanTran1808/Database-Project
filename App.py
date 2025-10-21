@@ -261,7 +261,7 @@ def order_confirm():
         status_msg = f"No available delivery person in postcode {customer_postcode}. Order pending."
 
 
-    return jsonify({"customer_id": customer_id,"order_id": order_id, "final_total": summary["final_total"], "delivery_status": status_msg})
+    return jsonify({"customer_id": customer_id,"order_id": order_id, "discount": summary["discount"], "final_total": summary["final_total"], "delivery_status": status_msg})
     
 
 def mark_available_after_30min(delivery_person_id):
@@ -272,6 +272,51 @@ def mark_available_after_30min(delivery_person_id):
         (delivery_person_id,), commit=True)
     print(f"✅ Delivery person {delivery_person_id} is now available again.")
     
+@app.route("/analytics/top_pizzas")
+def top_selling_pizzas():
+    top_pizzas = query("""
+        SELECT 
+            pr.name AS pizza_name,
+            SUM(oi.quantity) AS total_sold,
+            SUM(oi.price * oi.quantity) AS total_revenue
+        FROM OrderItem AS oi
+        JOIN Product AS pr ON oi.product_id = pr.product_id
+        JOIN Pizza AS p ON p.product_id = pr.product_id
+        GROUP BY pr.name
+        ORDER BY total_sold DESC
+        LIMIT 10
+    """)
+    return jsonify([
+        {"pizza_name": n, "total_sold": int(q), "total_revenue": float(r)}
+        for (n, q, r) in top_pizzas
+    ])
+
+@app.route("/analytics/undelivered_orders")
+def undelivered_orders():
+    undelivered = query("""
+        SELECT 
+            o.order_id,
+            c.name AS customer_name,
+            c.address,
+            c.postcode,
+            o.order_time,
+            o.total_price
+        FROM Orders AS o
+        JOIN Customer AS c ON o.customer_id = c.customer_id
+        WHERE o.delivery_person_id IS NULL
+        ORDER BY o.order_time ASC
+    """)
+    return jsonify([
+        {
+            "order_id": oid,
+            "customer_name": name,
+            "address": addr,
+            "postcode": pc,
+            "order_time": str(ot),
+            "total_price": float(tp)
+        }
+        for (oid, name, addr, pc, ot, tp) in undelivered
+    ])
 # def assign_oldest_unassigned(delivery_person_id):
 #     """If any undelivered orders exist for this postcode, assign the oldest one."""
 #     # Get delivery person postcode
