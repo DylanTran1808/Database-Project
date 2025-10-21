@@ -6,26 +6,23 @@ entity "Product" as product {
   * product_id : int <<PK>>
   --
   * name : varchar
-  * type : boolean  -- 'pizza', 'not pizza'
+  * is_pizza : boolean
   * price : decimal
 }
 
 entity "Pizza" as P {
   * product_id : INT <<PK, FK>>
   --
-  size : VARCHAR
 }
 
 entity "Drink" as drink {
   * product_id : INT <<PK, FK>>
   --
-  * name : VARCHAR
 }
 
 entity "Dessert" as dessert {
   * product_id : INT <<PK, FK>>
   --
-  * name : VARCHAR
 }
 
 entity "OrderItem" as OI {
@@ -74,7 +71,7 @@ entity "DiscountCode" as DC {
   --
   * percentage : decimal
   * cost : decimal
-  * type : varchar
+  * used : boolean
 }
 
 entity "Ingredient" as I {

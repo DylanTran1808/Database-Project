@@ -48,9 +48,6 @@ def validate_discount_code(code: str):
     if not result:
         return (0.0)
 
-    # Because your query() uses dictionary=False,
-    # result will be a tuple, not a dict.
-    # Tuple order: (code, type, value)
     discount_code, discount_value = result
 
 
@@ -317,36 +314,6 @@ def undelivered_orders():
         }
         for (oid, name, addr, pc, ot, tp) in undelivered
     ])
-# def assign_oldest_unassigned(delivery_person_id):
-#     """If any undelivered orders exist for this postcode, assign the oldest one."""
-#     # Get delivery person postcode
-#     person = query("SELECT postcode FROM DeliveryPerson WHERE delivery_person_id = %s", (delivery_person_id,), one=True)
-#     if not person:
-#         return
-#     dp_postcode = person[0]
-
-#     order = query("""
-#         SELECT o.order_id
-#         FROM Orders o
-#         JOIN Customer c ON o.customer_id = c.customer_id
-#         WHERE o.delivery_person_id IS NULL AND c.postcode = %s
-#         ORDER BY o.order_time ASC
-#         LIMIT 1
-#     """, (dp_postcode,), one=True)
-    
-#     if order:
-#         order_id = order[0]
-#         print(f"🚚 Reassigning available delivery person {delivery_person_id} to pending order {order_id}")
-#         query("""
-#             UPDATE Orders
-#             SET delivery_person_id = %s
-#             WHERE order_id = %s
-#         """, (delivery_person_id, order_id), commit=True)
-#         query("UPDATE DeliveryPerson SET is_available = FALSE WHERE delivery_person_id = %s",
-#               (delivery_person_id,), commit=True)
-#         threading.Thread(target=mark_available_after_30min, args=(delivery_person_id,)).start()
-
-
 if __name__ == "__main__":
     app.run(debug=True)
     
